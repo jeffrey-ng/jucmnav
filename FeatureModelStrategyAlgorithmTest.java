@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
 
 import fm.Feature;
 import fm.FeatureDiagram;
@@ -11,6 +12,7 @@ import fm.FeatureModel;
 import fm.FmFactory;
 import fm.MandatoryFMLink;
 import fm.OptionalFMLink;
+import fm.impl.FeatureModelImpl;
 import fm.impl.FeatureModelImpl.EvaluationResult;
 import grl.ActorRef;
 import grl.Belief;
@@ -40,6 +42,7 @@ import org.junit.Test;
 import ca.mcgill.sel.core.COREFeature;
 import ca.mcgill.sel.core.COREFeatureModel;
 import ca.mcgill.sel.core.COREFeatureRelationshipType;
+import ca.mcgill.sel.core.COREFeatureSelectionStatus;
 import seg.jUCMNav.core.COREFactory4URN;
 import seg.jUCMNav.editors.UCMNavMultiPageEditor;
 import seg.jUCMNav.model.ModelCreationFactory;
@@ -50,6 +53,7 @@ import seg.jUCMNav.model.commands.create.CreateStrategiesGroupCommand;
 import seg.jUCMNav.model.commands.create.CreateStrategyCommand;
 import seg.jUCMNav.model.commands.delete.DeleteMapCommand;
 import seg.jUCMNav.model.commands.transformations.ChangeGrlNodeNameCommand;
+import seg.jUCMNav.model.commands.transformations.ChangeNumericalEvaluationCommand;
 import seg.jUCMNav.model.util.ParentFinder;
 import seg.jUCMNav.strategies.EvaluationStrategyManager;
 import seg.jUCMNav.strategies.FeatureModelStrategyAlgorithm;
@@ -133,12 +137,6 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 	        DeletePreferences.getPreferenceStore().setValue(DeletePreferences.PREF_DELDEFINITION, DeletePreferences.PREF_ALWAYS);
 	        DeletePreferences.getPreferenceStore().setValue(DeletePreferences.PREF_DELREFERENCE, DeletePreferences.PREF_ALWAYS);
 		
-	     
-//		GrlFactory factory = GrlFactoryImpl.init();
-//		strategy = factory.createEvaluationStrategy();
-//		GRLspec spec = factory.createGRLspec();
-//		strategy.setGrlspec(spec);
-		
 	}
 	
 	@After
@@ -155,9 +153,12 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		FeatureModel fm = urn.getGrlspec().getFeatureModel();
 		FeatureDiagram fd = null;
 		Feature root = null;
-		
+		Vector<IntentionalElementRef> featureRefs = new Vector<IntentionalElementRef>();
+
 		StrategyEvaluationPreferences.createPreferences();
 		StrategyEvaluationPreferences.setAlgorithm(StrategyEvaluationPreferences.FEATURE_MODEL_ALGORITHM + "");
+		StrategyEvaluationPreferences.setTolerance(0);
+		StrategyEvaluationPreferences.getPreferenceStore().setValue("PREF_AUTOSELECTMANDATORYFEATURES", true);
 
 		
 		Iterator it4 = urn.getUrndef().getSpecDiagrams().iterator();
@@ -178,56 +179,47 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			root = roots.get(0);
 		}
 		root.addFeature("child1", COREFeatureRelationshipType.OR);
-		Feature child = (Feature) ((IntentionalElementRef) fd.getNodes().get(1)).getDef();
-		assertEquals("child1", child.getName());
-		child.setSelectable(true);
+		Feature child1 = (Feature) ((IntentionalElementRef) fd.getNodes().get(1)).getDef();
+		assertEquals("child1", child1.getName());
+		
 		root.addFeature("child2", COREFeatureRelationshipType.OR);
 		Feature child2 = (Feature) ((IntentionalElementRef) fd.getNodes().get(2)).getDef();
 		assertEquals("child2", child2.getName());
-
-
-		//link = (ElementLink) child.getLinksSrc().get(0);
-		
-
-//		Generate root.
-
-		
-//		FeatureModel fm = (FeatureModel)ModelCreationFactory.getNewObject(urn, FeatureModel.class);
-		
-	
 		List<COREFeature> features = new ArrayList<COREFeature>();
-		StrategiesGroup group = (StrategiesGroup) ModelCreationFactory.getNewObject(urn, StrategiesGroup.class);
-		CreateStrategiesGroupCommand csgCmd = new CreateStrategiesGroupCommand(urn, group);
-		if (csgCmd.canExecute()){
-			csgCmd.execute();
-		}else {return;}
-		CreateStrategyCommand csCmd = new CreateStrategyCommand(urn, group);
-		EvaluationStrategy strategy = csCmd.getStrategy();
-		if (csCmd.canExecute())
-			csCmd.execute();
-		else 
-			return;
-		// select the new strategy and set the values of the selected features
-		EvaluationStrategyManager manager = EvaluationStrategyManager.getInstance();
-		manager.setStrategy(strategy);
-		manager.calculateEvaluation();
-		algo = new FeatureModelStrategyAlgorithm();
-		algo.autoSelectAllMandatoryFeatures(strategy);
+		features.add((COREFeature) child1);
+		EvaluationResult er = ((FeatureModelImpl) fm).select(features);
+		Iterator<COREFeature> it5 = er.featureResult.keySet().iterator();
+		while (it5.hasNext()) {
+			COREFeature cf = it5.next();
+			COREFeatureSelectionStatus ss = er.featureResult.get(cf);
+			if (cf.getName().equals("child1")) {
+				System.out.println("hi");
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			
+		}
+
+//		StrategiesGroup group = (StrategiesGroup) ModelCreationFactory.getNewObject(urn, StrategiesGroup.class);
+//		CreateStrategiesGroupCommand csgCmd = new CreateStrategiesGroupCommand(urn, group);
+//		if (csgCmd.canExecute()){
+//			csgCmd.execute();
+//		}else {return;}
+//		CreateStrategyCommand csCmd = new CreateStrategyCommand(urn, group);
+//		EvaluationStrategy strategy = csCmd.getStrategy();
+//		if (csCmd.canExecute())
+//			csCmd.execute();
+//		else 
+//			return;
+//		// select the new strategy and set the values of the selected features
+//		EvaluationStrategyManager manager = EvaluationStrategyManager.getInstance();
+//		manager.setStrategy(strategy);
+//		manager.calculateEvaluation();
+//		algo = new FeatureModelStrategyAlgorithm();
+//		algo.autoSelectAllMandatoryFeatures(strategy);
 		
-		assertEquals(100,child.getImportanceQuantitative());
-		
-//		
-		//manager.calculateEvaluation();
-		
-		
+		assertEquals(100,child1.getImportanceQuantitative());				
 		
 	}
-	
-//	@Test
-//	public void testGetEvaluationType() {
-//		int v = algo.getEvaluationType();
-//		assertEquals(v,IGRLStrategyAlgorithm.EVAL_FEATURE_MODEL);
-//	}
-//	
+
 	
 }
