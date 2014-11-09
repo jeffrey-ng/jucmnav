@@ -17,10 +17,13 @@ import fm.impl.FeatureModelImpl.EvaluationResult;
 import grl.ActorRef;
 import grl.Belief;
 import grl.ContributionType;
+import grl.Decomposition;
+import grl.DecompositionType;
 import grl.ElementLink;
 import grl.EvaluationStrategy;
 import grl.GRLGraph;
 import grl.GRLNode;
+import grl.IntentionalElement;
 import grl.IntentionalElementRef;
 import grl.StrategiesGroup;
 
@@ -47,12 +50,15 @@ import seg.jUCMNav.core.COREFactory4URN;
 import seg.jUCMNav.editors.UCMNavMultiPageEditor;
 import seg.jUCMNav.model.ModelCreationFactory;
 import seg.jUCMNav.model.commands.create.AddIntentionalElementRefCommand;
+import seg.jUCMNav.model.commands.create.CreateElementLinkCommand;
 import seg.jUCMNav.model.commands.create.CreateFMDCommand;
 import seg.jUCMNav.model.commands.create.CreateGrlGraphCommand;
 import seg.jUCMNav.model.commands.create.CreateStrategiesGroupCommand;
 import seg.jUCMNav.model.commands.create.CreateStrategyCommand;
 import seg.jUCMNav.model.commands.delete.DeleteMapCommand;
+import seg.jUCMNav.model.commands.transformations.ChangeDecompositionTypeCommand;
 import seg.jUCMNav.model.commands.transformations.ChangeGrlNodeNameCommand;
+import seg.jUCMNav.model.commands.transformations.ChangeNumericalContributionCommand;
 import seg.jUCMNav.model.commands.transformations.ChangeNumericalEvaluationCommand;
 import seg.jUCMNav.model.util.ParentFinder;
 import seg.jUCMNav.strategies.EvaluationStrategyManager;
@@ -68,14 +74,19 @@ import junit.framework.TestCase;
 
 public class FeatureModelStrategyAlgorithmTest extends TestCase{
 
+	 enum LinkType {
+	    MANDATORY, OPTIONAL, XOR, OR,
+	    AND
+	}
+	
 	private UCMNavMultiPageEditor editor;
     private CommandStack cs;
 
 	
 	  private URNspec urnspec;
-	    private GRLGraph graph;
-	    private IntentionalElementRef ref;
-	    private Belief belief;
+	  private URNspec urn;
+	  private FeatureDiagram fd;
+	  private FeatureModel fm;
 	    // private Actor actor;
 	    private ActorRef actorref;
 	    private ActorRef actorref2;
@@ -129,7 +140,6 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 
 	        // Create a new GRLGraph
 	        cmd = new CreateGrlGraphCommand(urnspec);
-	        graph = ((CreateGrlGraphCommand) cmd).getDiagram();
 	        assertTrue("Can't execute CreateGrlGraphCommand.", cmd.canExecute()); //$NON-NLS-1$
 	        cs.execute(cmd);
 
@@ -148,10 +158,8 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		editor.closeEditor(false);
 	}
 
-
-	
-	private FeatureObjectContainer setupTest() {
-		URNspec urn = ModelCreationFactory.getNewURNspec(true, true, true);
+	private Feature setupTest() {
+		urn = ModelCreationFactory.getNewURNspec(true, true, true);
 		FeatureModel fm = urn.getGrlspec().getFeatureModel();
 		FeatureDiagram fd = null;
 		Feature root = null;
@@ -178,53 +186,157 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			// root feature exists (take the first one as URN does not constrain feature models to one root), but is it placed on a feature diagram?
 			root = roots.get(0);
 		}
-		
-		return new FeatureObjectContainer(fm,fd,root);
+		root.setName("root");
+		this.fd = fd;
+		this.fm = fm;
+		return root;
 
+	}
+	
+	private Feature createFeature(IntentionalElement parent, String name, LinkType relationship){
+		IntentionalElementRef ref = (IntentionalElementRef) ModelCreationFactory.getNewObject(urn, IntentionalElementRef.class, ModelCreationFactory.FEATURE);
+		AddIntentionalElementRefCommand aierCmd = new AddIntentionalElementRefCommand(fd, ref);
+		aierCmd.execute();
+		ChangeGrlNodeNameCommand cgnnCmd = new ChangeGrlNodeNameCommand(ref, name);
+		cgnnCmd.execute();
+
+
+		ElementLink link = null;
+		int type = 0;
+		if (relationship == LinkType.MANDATORY) {
+			// add mandatory link between this feature and the new child feature
+			link = (ElementLink) ModelCreationFactory.getNewObject(urn, MandatoryFMLink.class);								
+		} else if (relationship == LinkType.OPTIONAL) {
+			// add optional link between this feature and the new child feature
+			link = (ElementLink) ModelCreationFactory.getNewObject(urn, OptionalFMLink.class);
+		} else if (relationship == LinkType.XOR) {
+			// add XOR decomposition link between this feature and the new child feature
+			link = (ElementLink) ModelCreationFactory.getNewObject(urn, Decomposition.class);
+			type = 2;
+		} else if (relationship == LinkType.OR) {
+			// add OR decomposition link between this feature and the new child feature
+			link = (ElementLink) ModelCreationFactory.getNewObject(urn, Decomposition.class);
+			type = 1;
+		} else if (relationship == LinkType.AND) {
+			link = (ElementLink) ModelCreationFactory.getNewObject(urn, Decomposition.class);
+			type = 0;
+		}
+		
+		CreateElementLinkCommand celCmd = new CreateElementLinkCommand(urn, (IntentionalElement) ref.getDef(), link);
+		celCmd.setTarget(parent);
+		if (celCmd.canExecute())
+			celCmd.execute();
+		if (relationship == LinkType.XOR || relationship == LinkType.OR || relationship == LinkType.AND) {
+			ChangeDecompositionTypeCommand cdtCmd = new ChangeDecompositionTypeCommand((IntentionalElementRef) parent.getRefs().get(0), type);
+			if (cdtCmd.canExecute())
+				cdtCmd.execute();
+		}
+		
+		return (Feature) ref.getDef();
 	}
 	
 	
 	@Test
-	public void tc1(){
-		FeatureObjectContainer testObject = setupTest();
-		FeatureModel fm = testObject.fm;
-		FeatureDiagram fd = testObject.fd;
-		Feature root = testObject.root;
+	public void testCase(){
+		Feature root = setupTest();
 		List<COREFeature> features = new ArrayList<COREFeature>();
 
 		
-		root.addFeature("child1", COREFeatureRelationshipType.OR);
-		Feature child1 = (Feature) ((IntentionalElementRef) fd.getNodes().get(1)).getDef();
+		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY);
 		assertEquals("child1", child1.getName());
-		features.add((COREFeature) child1);
-	
-		root.addFeature("child2", COREFeatureRelationshipType.OR);
-		Feature child2 = (Feature) ((IntentionalElementRef) fd.getNodes().get(2)).getDef();
+//		ChangeNumericalContributionCommand cncmd1 = new ChangeNumericalContributionCommand(child1.getLinksSrc(),0,2,cs);
+//		cncmd1.execute();
+		
+		Feature child11 = createFeature(child1,"child11",LinkType.XOR);
+		assertEquals("child11", child11.getName());
+		features.add((COREFeature) child11);
+		
+		Feature child12 = createFeature(child1,"child12",LinkType.XOR);
+		assertEquals("child12", child12.getName());
+
+		Feature child2 = createFeature(root,"child2",LinkType.OPTIONAL);
 		assertEquals("child2", child2.getName());
+//		ChangeNumericalContributionCommand cncmd2 = new ChangeNumericalContributionCommand(child2.getLinksSrc(),0,4,cs);
+//		cncmd2.execute();
+		
+		Feature child21 = createFeature(child2,"child21",LinkType.OPTIONAL);
+		assertEquals("child21", child21.getName());
+//		ChangeNumericalContributionCommand cncmd3 = new ChangeNumericalContributionCommand(child21.getLinksSrc(),0,0,cs);
+//		cncmd3.execute();
+		features.add((COREFeature) child21);
+		
+		Feature child3 = createFeature(root,"child3",LinkType.MANDATORY);
+		child3.getLinksSrc().get(0);
+//		ChangeNumericalContributionCommand cncmd4 = new ChangeNumericalContributionCommand(child3.getLinksSrc(),0,2,cs);
+//		cncmd4.execute();
+		assertEquals("child3", child3.getName());
+		
+		Feature child31 = createFeature(child3,"child31",LinkType.OR);
+		assertEquals("child31", child31.getName());
+		features.add((COREFeature) child31);
+		
+		Feature child32 = createFeature(child3,"child32",LinkType.OR);
+		assertEquals("child32", child32.getName());
+
+		Feature child4 = createFeature(root,"child4",LinkType.MANDATORY);
+		assertEquals("child4", child4.getName());
+//		ChangeNumericalContributionCommand cncmd5 = new ChangeNumericalContributionCommand(child4.getLinksSrc(),0,2,cs);
+//		cncmd5.execute();
+		
+		Feature child41 = createFeature(child4,"child41",LinkType.AND);
+		assertEquals("child41", child41.getName());
+		features.add((COREFeature) child41);
+		
+		Feature child42 = createFeature(child4,"child42",LinkType.AND);
+		assertEquals("child42", child42.getName());
+
+		
 		
 		EvaluationResult er = ((FeatureModelImpl) fm).select(features);
+
 		Iterator<COREFeature> it5 = er.featureResult.keySet().iterator();
 		while (it5.hasNext()) {
 			COREFeature cf = it5.next();
 			COREFeatureSelectionStatus ss = er.featureResult.get(cf);
 			//Check each feature and if they're selected or not.
 			if (cf.getName().equals("child1")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("child11")) {
 				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 			}
-			if (cf.getName().equals("child2")) {
+			if (cf.getName().equals("child12")) {
 				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
+			if (cf.getName().equals("child2")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("child21")) {
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child3")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("child31")) {
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child32")) {
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
+			}
+			if (cf.getName().equals("child4")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("child41")) {
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child42")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
 		}		
-	}
- class FeatureObjectContainer{
-		public final FeatureModel fm;
-		public final FeatureDiagram fd;
-		public final Feature root;
-		public FeatureObjectContainer (FeatureModel fm, FeatureDiagram fd, Feature root) {
-			this.fm = fm;
-			this.fd = fd;
-			this.root = root;
-		}
+		
 	}
 	
 }
