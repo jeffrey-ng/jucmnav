@@ -147,8 +147,10 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		
 		editor.closeEditor(false);
 	}
-	@Test
-	public void testGetEvaluationType() {
+
+
+	
+	private FeatureObjectContainer setupTest() {
 		URNspec urn = ModelCreationFactory.getNewURNspec(true, true, true);
 		FeatureModel fm = urn.getGrlspec().getFeatureModel();
 		FeatureDiagram fd = null;
@@ -160,14 +162,12 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		StrategyEvaluationPreferences.setTolerance(0);
 		StrategyEvaluationPreferences.getPreferenceStore().setValue("PREF_AUTOSELECTMANDATORYFEATURES", true);
 
-		
 		Iterator it4 = urn.getUrndef().getSpecDiagrams().iterator();
 		while (it4.hasNext()) {
 			IURNDiagram diagram = (IURNDiagram) it4.next();
 			if (diagram instanceof FeatureDiagram)
 				fd = (FeatureDiagram) diagram;
 		}
-
 		if (root == null) {
 			IntentionalElementRef ref = (IntentionalElementRef) ModelCreationFactory.getNewObject(urn, IntentionalElementRef.class, ModelCreationFactory.FEATURE);
 	        AddIntentionalElementRefCommand aierCmd = new AddIntentionalElementRefCommand(fd, ref);
@@ -178,48 +178,54 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			// root feature exists (take the first one as URN does not constrain feature models to one root), but is it placed on a feature diagram?
 			root = roots.get(0);
 		}
+		
+		return new FeatureObjectContainer(fm,fd,root);
+
+	}
+	
+	
+	@Test
+	public void tc1(){
+		FeatureObjectContainer testObject = setupTest();
+		FeatureModel fm = testObject.fm;
+		FeatureDiagram fd = testObject.fd;
+		Feature root = testObject.root;
+		List<COREFeature> features = new ArrayList<COREFeature>();
+
+		
 		root.addFeature("child1", COREFeatureRelationshipType.OR);
 		Feature child1 = (Feature) ((IntentionalElementRef) fd.getNodes().get(1)).getDef();
 		assertEquals("child1", child1.getName());
-		
+		features.add((COREFeature) child1);
+	
 		root.addFeature("child2", COREFeatureRelationshipType.OR);
 		Feature child2 = (Feature) ((IntentionalElementRef) fd.getNodes().get(2)).getDef();
 		assertEquals("child2", child2.getName());
-		List<COREFeature> features = new ArrayList<COREFeature>();
-		features.add((COREFeature) child1);
+		
 		EvaluationResult er = ((FeatureModelImpl) fm).select(features);
 		Iterator<COREFeature> it5 = er.featureResult.keySet().iterator();
 		while (it5.hasNext()) {
 			COREFeature cf = it5.next();
 			COREFeatureSelectionStatus ss = er.featureResult.get(cf);
+			//Check each feature and if they're selected or not.
 			if (cf.getName().equals("child1")) {
-				System.out.println("hi");
 				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 			}
-			
-		}
-
-//		StrategiesGroup group = (StrategiesGroup) ModelCreationFactory.getNewObject(urn, StrategiesGroup.class);
-//		CreateStrategiesGroupCommand csgCmd = new CreateStrategiesGroupCommand(urn, group);
-//		if (csgCmd.canExecute()){
-//			csgCmd.execute();
-//		}else {return;}
-//		CreateStrategyCommand csCmd = new CreateStrategyCommand(urn, group);
-//		EvaluationStrategy strategy = csCmd.getStrategy();
-//		if (csCmd.canExecute())
-//			csCmd.execute();
-//		else 
-//			return;
-//		// select the new strategy and set the values of the selected features
-//		EvaluationStrategyManager manager = EvaluationStrategyManager.getInstance();
-//		manager.setStrategy(strategy);
-//		manager.calculateEvaluation();
-//		algo = new FeatureModelStrategyAlgorithm();
-//		algo.autoSelectAllMandatoryFeatures(strategy);
-		
-		assertEquals(100,child1.getImportanceQuantitative());				
-		
+			if (cf.getName().equals("child2")) {
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
+			}
+		}		
 	}
-
+ class FeatureObjectContainer{
+		public final FeatureModel fm;
+		public final FeatureDiagram fd;
+		public final Feature root;
+		public FeatureObjectContainer (FeatureModel fm, FeatureDiagram fd, Feature root) {
+			this.fm = fm;
+			this.fd = fd;
+			this.root = root;
+		}
+	}
 	
 }
+
