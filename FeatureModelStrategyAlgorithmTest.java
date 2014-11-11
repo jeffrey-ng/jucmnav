@@ -193,13 +193,12 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 
 	}
 	
-	private Feature createFeature(IntentionalElement parent, String name, LinkType relationship){
+	private Feature createFeature(IntentionalElement parent, String name, LinkType relationship, int numericalContribution){
 		IntentionalElementRef ref = (IntentionalElementRef) ModelCreationFactory.getNewObject(urn, IntentionalElementRef.class, ModelCreationFactory.FEATURE);
 		AddIntentionalElementRefCommand aierCmd = new AddIntentionalElementRefCommand(fd, ref);
 		aierCmd.execute();
 		ChangeGrlNodeNameCommand cgnnCmd = new ChangeGrlNodeNameCommand(ref, name);
 		cgnnCmd.execute();
-
 
 		ElementLink link = null;
 		int type = 0;
@@ -226,6 +225,11 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		celCmd.setTarget(parent);
 		if (celCmd.canExecute())
 			celCmd.execute();
+		if (relationship == LinkType.MANDATORY || relationship == LinkType.OPTIONAL) {
+			ChangeNumericalContributionCommand cncmd3 = new ChangeNumericalContributionCommand(link.getRefs(),0,numericalContribution,cs);
+			cncmd3.execute();
+		}
+		
 		if (relationship == LinkType.XOR || relationship == LinkType.OR || relationship == LinkType.AND) {
 			ChangeDecompositionTypeCommand cdtCmd = new ChangeDecompositionTypeCommand((IntentionalElementRef) parent.getRefs().get(0), type);
 			if (cdtCmd.canExecute())
@@ -241,57 +245,45 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		Feature root = setupTest();
 		List<COREFeature> features = new ArrayList<COREFeature>();
 
-		
-		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY);
+		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY, 0);
 		assertEquals("child1", child1.getName());
-//		ChangeNumericalContributionCommand cncmd1 = new ChangeNumericalContributionCommand(child1.getLinksSrc(),0,2,cs);
-//		cncmd1.execute();
 		
-		Feature child11 = createFeature(child1,"child11",LinkType.XOR);
+		Feature child11 = createFeature(child1,"child11",LinkType.XOR, 0);
 		assertEquals("child11", child11.getName());
 		features.add((COREFeature) child11);
 		
-		Feature child12 = createFeature(child1,"child12",LinkType.XOR);
+		Feature child12 = createFeature(child1,"child12",LinkType.XOR, 0);
 		assertEquals("child12", child12.getName());
 
-		Feature child2 = createFeature(root,"child2",LinkType.OPTIONAL);
+		Feature child2 = createFeature(root,"child2",LinkType.OPTIONAL, 0);
 		assertEquals("child2", child2.getName());
-//		ChangeNumericalContributionCommand cncmd2 = new ChangeNumericalContributionCommand(child2.getLinksSrc(),0,4,cs);
-//		cncmd2.execute();
 		
-		Feature child21 = createFeature(child2,"child21",LinkType.OPTIONAL);
+		Feature child21 = createFeature(child2,"child21",LinkType.OPTIONAL, 0);
 		assertEquals("child21", child21.getName());
-//		ChangeNumericalContributionCommand cncmd3 = new ChangeNumericalContributionCommand(child21.getLinksSrc(),0,0,cs);
-//		cncmd3.execute();
 		features.add((COREFeature) child21);
 		
-		Feature child3 = createFeature(root,"child3",LinkType.MANDATORY);
+		Feature child3 = createFeature(root,"child3",LinkType.MANDATORY, 2);
 		child3.getLinksSrc().get(0);
-//		ChangeNumericalContributionCommand cncmd4 = new ChangeNumericalContributionCommand(child3.getLinksSrc(),0,2,cs);
-//		cncmd4.execute();
 		assertEquals("child3", child3.getName());
 		
-		Feature child31 = createFeature(child3,"child31",LinkType.OR);
+		Feature child31 = createFeature(child3,"child31",LinkType.OR, 0);
 		assertEquals("child31", child31.getName());
 		features.add((COREFeature) child31);
 		
-		Feature child32 = createFeature(child3,"child32",LinkType.OR);
+		Feature child32 = createFeature(child3,"child32",LinkType.OR, 0);
 		assertEquals("child32", child32.getName());
 
-		Feature child4 = createFeature(root,"child4",LinkType.MANDATORY);
+		Feature child4 = createFeature(root,"child4",LinkType.MANDATORY, 2);
 		assertEquals("child4", child4.getName());
-//		ChangeNumericalContributionCommand cncmd5 = new ChangeNumericalContributionCommand(child4.getLinksSrc(),0,2,cs);
-//		cncmd5.execute();
 		
-		Feature child41 = createFeature(child4,"child41",LinkType.AND);
+		
+		Feature child41 = createFeature(child4,"child41",LinkType.AND, 0);
 		assertEquals("child41", child41.getName());
 		features.add((COREFeature) child41);
 		
-		Feature child42 = createFeature(child4,"child42",LinkType.AND);
+		Feature child42 = createFeature(child4,"child42",LinkType.AND, 0);
 		assertEquals("child42", child42.getName());
 
-		
-		
 		EvaluationResult er = ((FeatureModelImpl) fm).select(features);
 
 		Iterator<COREFeature> it5 = er.featureResult.keySet().iterator();
