@@ -169,7 +169,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		StrategyEvaluationPreferences.setAlgorithm(StrategyEvaluationPreferences.FEATURE_MODEL_ALGORITHM + "");
 		StrategyEvaluationPreferences.setTolerance(0);
 		StrategyEvaluationPreferences.getPreferenceStore().setValue("PREF_AUTOSELECTMANDATORYFEATURES", true);
-
+		
 		Iterator it4 = urn.getUrndef().getSpecDiagrams().iterator();
 		while (it4.hasNext()) {
 			IURNDiagram diagram = (IURNDiagram) it4.next();
@@ -239,7 +239,6 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		return (Feature) ref.getDef();
 	}
 	
-	
 	@Test
 	public void testCase(){
 		Feature root = setupTest();
@@ -275,7 +274,6 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 
 		Feature child4 = createFeature(root,"child4",LinkType.MANDATORY, 2);
 		assertEquals("child4", child4.getName());
-		
 		
 		Feature child41 = createFeature(child4,"child41",LinkType.AND, 0);
 		assertEquals("child41", child41.getName());
@@ -328,6 +326,88 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 			}
 		}		
+	}
+	
+	@Test
+	public void testCaseDecomposition(){
+		Feature root = setupTest();
+		List<COREFeature> features = new ArrayList<COREFeature>();
+		
+		// XOR tree
+		Feature child1 = createFeature(root,"child1",LinkType.OPTIONAL, 4);
+		assertEquals("child1", child1.getName());
+		Feature child11 = createFeature(child1,"child11",LinkType.XOR, 0);
+		assertEquals("child11", child11.getName());
+		Feature child12 = createFeature(child1,"child12",LinkType.XOR, 0);
+		assertEquals("child12", child12.getName());
+		
+		// OR tree
+		Feature child2 = createFeature(root,"child2",LinkType.OPTIONAL, 4);
+		assertEquals("child2", child2.getName());
+		Feature child21 = createFeature(child2,"child21",LinkType.OR, 0);
+		assertEquals("child21", child21.getName());
+		Feature child22 = createFeature(child2,"child22",LinkType.OR, 0);
+		assertEquals("child22", child22.getName());
+		
+		// AND tree
+		Feature child3 = createFeature(root,"child3",LinkType.OPTIONAL, 4);
+		assertEquals("child3", child3.getName());
+		Feature child31 = createFeature(child3,"child31",LinkType.AND, 0);
+		assertEquals("child31", child31.getName());
+		Feature child32 = createFeature(child3,"child32",LinkType.AND, 0);
+		assertEquals("child32", child32.getName());
+
+		//tc1 SELECT ALL FEATURES
+		features.add((COREFeature) child11);
+		features.add((COREFeature) child12);
+		features.add((COREFeature) child21);
+		features.add((COREFeature) child22);
+		features.add((COREFeature) child31);
+		features.add((COREFeature) child32);
+
+		EvaluationResult er = ((FeatureModelImpl) fm).select(features);
+		Iterator<COREFeature> it5 = er.featureResult.keySet().iterator();
+		while (it5.hasNext()) {
+			COREFeature cf = it5.next();
+			COREFeatureSelectionStatus ss = er.featureResult.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("child11")) {
+				assertTrue(COREFeatureSelectionStatus.WARNING_USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child12")) {
+				assertTrue(COREFeatureSelectionStatus.WARNING_USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child2")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("child21")) {
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child3")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("child31")) {
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child32")) {
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child4")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+			if (cf.getName().equals("child41")) {
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("child42")) {
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
 		
 	}
 	
