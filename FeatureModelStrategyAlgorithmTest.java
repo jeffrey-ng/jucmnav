@@ -250,13 +250,11 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 	
 	private Map<Feature, COREFeatureSelectionStatus> runAlgo(HashMap<Feature,Evaluation> eval)
 	{
-		EvaluationStrategyManager em = EvaluationStrategyManager.getInstance();
-
 		algo = new FeatureModelStrategyAlgorithm();
 		algo.clearAllAutoSelectedFeatures(strategy);
 		algo.autoSelectAllMandatoryFeatures(strategy);
 		algo.init(strategy, eval);
-		em.setStrategy(strategy);
+		EvaluationStrategyManager.getInstance().setStrategy(strategy);
 	
 
 		Map<Feature, COREFeatureSelectionStatus> fr = new HashMap<Feature, COREFeatureSelectionStatus>();
@@ -282,7 +280,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (warning)
 				// TODO needs to differentiate between user selected and auto selected
 				selectionStatus = COREFeatureSelectionStatus.WARNING_USER_SELECTED;
-			else if (evalResult==0)
+			else if (evalResult==0 && (FeatureUtil.containsOnlySrcLinkToNotSelectedFeature(f) || FeatureUtil.containsOnlySrcLinkToNotSelectedFeature(f) || FeatureUtil.hasSelectedOrXorBrother(f, true, true)))
 				selectionStatus = COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION;
 			else if (evalResult==100) {
 				if (userEval.getEvaluation()==100)
@@ -290,6 +288,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 				else
 					selectionStatus = COREFeatureSelectionStatus.AUTO_SELECTED;
 			}
+			
 
 //			if (warning)
 //				// TODO needs to differentiate between user selected and auto selected
@@ -481,9 +480,9 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
-//			if (cf.getName().equals("root")) {
-//				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
-//			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
+			}
 		}	
 		
 	}
@@ -569,9 +568,9 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
-//			if (cf.getName().equals("root")) {
-//				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
-//			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
+			}
 		}	
 	}
 	
