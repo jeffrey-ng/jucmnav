@@ -315,10 +315,12 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		Map<Feature, COREFeatureSelectionStatus> fr;
 		Iterator<Feature> it;
 		
+		Feature subroot = createFeature(root, "subroot", LinkType.OR, 0);
+		
 		// AND tree
-		Feature child1 = createFeature(root,"child1",LinkType.AND, 0);
+		Feature child1 = createFeature(subroot,"child1",LinkType.AND, 0);
 		assertEquals("child1", child1.getName());
-		Feature child2 = createFeature(root,"child2",LinkType.AND, 0);
+		Feature child2 = createFeature(subroot,"child2",LinkType.AND, 0);
 		assertEquals("child2", child2.getName());
 		
 		
@@ -331,10 +333,10 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		selected.setEvaluation(100);
 		strategy.setGrlspec(urn.getGrlspec());
 		
-	
 		//tc1 ALL selected
 		eval.put(child1, selected);
 		eval.put(child2, selected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
 		
 		fr = runAlgo(eval);
@@ -349,17 +351,20 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 			}
-			if (cf.getName().equals("root")) {
+			if (cf.getName().equals("subroot")) {
 				assertEquals(COREFeatureSelectionStatus.AUTO_SELECTED,ss);
 
 				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 			}
-		}	
+		}
+		
 		//tc2 ONE selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, selected);
 		eval.put(child2, notSelected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
+		
 		fr = runAlgo(eval);
 		it = fr.keySet().iterator();
 		while (it.hasNext()) {
@@ -370,17 +375,20 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 			}
 			if (cf.getName().equals("child2")) {
-				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}		
-//			if (cf.getName().equals("root")) {
-//				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
-//			}
-		}	
+			if (cf.getName().equals("subroot")) {
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
+			}
+		}
+		
 		//tc3 NO selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, notSelected);
 		eval.put(child2, notSelected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
+		
 		fr = runAlgo(eval);
 		it = fr.keySet().iterator();
 		while (it.hasNext()) {
@@ -388,14 +396,14 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			COREFeatureSelectionStatus ss = fr.get(cf);
 			//Check each feature and if they're selected or not.
 			if (cf.getName().equals("child1")) {
-				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
 			if (cf.getName().equals("child2")) {
-				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
-//			if (cf.getName().equals("root")) {
-//				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
-//			}
+			if (cf.getName().equals("subroot")) {
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
+			}
 		}	
 		
 	}
@@ -407,10 +415,12 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		Map<Feature, COREFeatureSelectionStatus> fr;
 		Iterator<Feature> it;
 		
-		// AND tree
-		Feature child1 = createFeature(root,"child1",LinkType.OR, 0);
+		Feature subroot = createFeature(root, "subroot", LinkType.OR, 0);
+		
+		// OR tree
+		Feature child1 = createFeature(subroot,"child1",LinkType.OR, 0);
 		assertEquals("child1", child1.getName());
-		Feature child2 = createFeature(root,"child2",LinkType.OR, 0);
+		Feature child2 = createFeature(subroot,"child2",LinkType.OR, 0);
 		assertEquals("child2", child2.getName());
 		
 		GrlFactory factory = GrlFactoryImpl.init();
@@ -422,10 +432,10 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		selected.setEvaluation(100);
 		strategy.setGrlspec(urn.getGrlspec());
 		
-	
 		//tc4 ALL selected
 		eval.put(child1, selected);
 		eval.put(child2, selected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
 		
 		fr = runAlgo(eval);
@@ -440,15 +450,18 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 			}
-			if (cf.getName().equals("root")) {
+			if (cf.getName().equals("subroot")) {
 				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 			}
-		}	
+		}
+		
 		//tc5 ONE selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, selected);
 		eval.put(child2, notSelected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
+		
 		fr = runAlgo(eval);
 		it = fr.keySet().iterator();
 		while (it.hasNext()) {
@@ -461,15 +474,18 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}		
-			if (cf.getName().equals("root")) {
+			if (cf.getName().equals("subroot")) {
 				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 			}
-		}	
+		}
+		
 		//tc6 NO selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, notSelected);
 		eval.put(child2, notSelected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
+		
 		fr = runAlgo(eval);
 		it = fr.keySet().iterator();
 		while (it.hasNext()) {
@@ -482,10 +498,10 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
-			if (cf.getName().equals("root")) {
-				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
+			if (cf.getName().equals("subroot")) {
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
-		}	
+		}
 		
 	}
 	
@@ -496,10 +512,12 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		Map<Feature, COREFeatureSelectionStatus> fr;
 		Iterator<Feature> it;
 		
-		// AND tree
-		Feature child1 = createFeature(root,"child1",LinkType.XOR, 0);
+		Feature subroot = createFeature(root,"subroot",LinkType.OR, 0);
+		
+		// XOR tree
+		Feature child1 = createFeature(subroot,"child1",LinkType.XOR, 0);
 		assertEquals("child1", child1.getName());
-		Feature child2 = createFeature(root,"child2",LinkType.XOR, 0);
+		Feature child2 = createFeature(subroot,"child2",LinkType.XOR, 0);
 		assertEquals("child2", child2.getName());
 		
 		GrlFactory factory = GrlFactoryImpl.init();
@@ -511,10 +529,10 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		selected.setEvaluation(100);
 		strategy.setGrlspec(urn.getGrlspec());
 		
-	
-		//tc1 ALL selected
+		//tc7 ALL selected -- bug here with both items in an XOR selected
 		eval.put(child1, selected);
 		eval.put(child2, selected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
 		
 		fr = runAlgo(eval);
@@ -525,19 +543,24 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			//Check each feature and if they're selected or not.
 			if (cf.getName().equals("child1")) {
 				assertTrue(COREFeatureSelectionStatus.WARNING_USER_SELECTED == ss);
+//				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 			}
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.WARNING_USER_SELECTED == ss);
+//				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 			}
-			if (cf.getName().equals("root")) {
+			if (cf.getName().equals("subroot")) {
 				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 			}
-		}	
-		//tc2 ONE selected
+		}
+		
+		//tc8 ONE selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, selected);
 		eval.put(child2, notSelected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
+		
 		fr = runAlgo(eval);
 		it = fr.keySet().iterator();
 		while (it.hasNext()) {
@@ -550,15 +573,18 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}		
-			if (cf.getName().equals("root")) {
+			if (cf.getName().equals("subroot")) {
 				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 			}
-		}	
-		//tc2 NO selected
+		}
+		
+		//tc9 NO selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, notSelected);
 		eval.put(child2, notSelected);
+		eval.put(subroot, notSelected);
 		eval.put(root, notSelected);
+		
 		fr = runAlgo(eval);
 		it = fr.keySet().iterator();
 		while (it.hasNext()) {
@@ -571,8 +597,8 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child2")) {
 				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
-			if (cf.getName().equals("root")) {
-				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
+			if (cf.getName().equals("subroot")) {
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
 			}
 		}	
 	}
