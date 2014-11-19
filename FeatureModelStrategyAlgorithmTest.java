@@ -280,7 +280,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (warning)
 				// TODO needs to differentiate between user selected and auto selected
 				selectionStatus = COREFeatureSelectionStatus.WARNING_USER_SELECTED;
-			else if (evalResult==0 && (FeatureUtil.containsOnlySrcLinkToNotSelectedFeature(f) || FeatureUtil.containsOnlySrcLinkToNotSelectedFeature(f) || FeatureUtil.hasSelectedOrXorBrother(f, true, true)))
+			else if (evalResult==0 && (FeatureUtil.containsOnlySrcLinkToNotSelectedFeature(f) || FeatureUtil.containsOnlyOptionalSrcLinkToFeature(f) || FeatureUtil.hasSelectedOrXorBrother(f, true, true)))
 				selectionStatus = COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION;
 			else if (evalResult==100) {
 				if (userEval.getEvaluation()==100)
@@ -308,8 +308,9 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		
 	}
 		
+	//DECOMPOSITION: AND
 	@Test
-	public void testCaseAND(){
+	public void testCase1_3(){
 		Feature root = setupTest();
 		Map<Feature, COREFeatureSelectionStatus> fr;
 		Iterator<Feature> it;
@@ -375,7 +376,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 //				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 //			}
 		}	
-		//tc2 NO selected
+		//tc3 NO selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, notSelected);
 		eval.put(child2, notSelected);
@@ -399,8 +400,9 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		
 	}
 	
+	//DECOMPOSITION: OR
 	@Test
-	public void testCaseOR(){
+	public void testCase4_6(){
 		Feature root = setupTest();
 		Map<Feature, COREFeatureSelectionStatus> fr;
 		Iterator<Feature> it;
@@ -421,7 +423,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		strategy.setGrlspec(urn.getGrlspec());
 		
 	
-		//tc1 ALL selected
+		//tc4 ALL selected
 		eval.put(child1, selected);
 		eval.put(child2, selected);
 		eval.put(root, notSelected);
@@ -442,7 +444,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 			}
 		}	
-		//tc2 ONE selected
+		//tc5 ONE selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, selected);
 		eval.put(child2, notSelected);
@@ -463,7 +465,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
 			}
 		}	
-		//tc2 NO selected
+		//tc6 NO selected
 		eval = new HashMap<Feature,Evaluation>();
 		eval.put(child1, notSelected);
 		eval.put(child2, notSelected);
@@ -487,8 +489,9 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 		
 	}
 	
+	//DECOMPOSITION: XOR
 	@Test
-	public void testCaseXOR(){
+	public void testCase7_9(){
 		Feature root = setupTest();
 		Map<Feature, COREFeatureSelectionStatus> fr;
 		Iterator<Feature> it;
@@ -572,6 +575,473 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
 			}
 		}	
+	}
+	
+	//FEATURE CONTRIBUTION:1M0O
+	@Test
+	public void testCase10_11(){
+		Feature root = setupTest();
+		Map<Feature, COREFeatureSelectionStatus> fr;
+		Iterator<Feature> it;
+		
+		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY, 0);
+		assertEquals("child1", child1.getName());
+		
+		GrlFactory factory = GrlFactoryImpl.init();
+		HashMap<Feature,Evaluation> eval = new HashMap<Feature,Evaluation>();
+		strategy = factory.createEvaluationStrategy();
+		Evaluation notSelected = factory.createEvaluation();
+		Evaluation selected = factory.createEvaluation();
+		notSelected.setEvaluation(0);
+		selected.setEvaluation(100);
+		strategy.setGrlspec(urn.getGrlspec());
+
+		//tc11 ALL selected
+		eval.put(child1, selected);
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
+		
+		eval = new HashMap<Feature,Evaluation>();
+		eval.put(child1, notSelected);
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
+	}
+	//FEATURE CONTRIBUTION:1M1O
+	@Test
+	public void testCase12_14(){
+		Feature root = setupTest();
+		Map<Feature, COREFeatureSelectionStatus> fr;
+		Iterator<Feature> it;
+		
+		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY, 0);
+		assertEquals("child1", child1.getName());
+		Feature child2 = createFeature(root,"child2",LinkType.OPTIONAL, 0);
+		assertEquals("child2", child2.getName());
+		
+		GrlFactory factory = GrlFactoryImpl.init();
+		HashMap<Feature,Evaluation> eval = new HashMap<Feature,Evaluation>();
+		strategy = factory.createEvaluationStrategy();
+		Evaluation notSelected = factory.createEvaluation();
+		Evaluation selected = factory.createEvaluation();
+		notSelected.setEvaluation(0);
+		selected.setEvaluation(100);
+		strategy.setGrlspec(urn.getGrlspec());
+		
+		//tc1 ALL selected
+		eval.put(child1, selected);
+		eval.put(child2, notSelected);
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+
+			}
+			if (cf.getName().equals("child2")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 0);
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_NO_ACTION == ss);
+
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
+		
+		eval = new HashMap<Feature,Evaluation>();
+		eval.put(child1, selected);
+		eval.put(child2, selected);
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+
+			}
+			if (cf.getName().equals("child2")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 0);
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
+		eval = new HashMap<Feature,Evaluation>();
+		eval.put(child1, notSelected);
+		eval.put(child2, notSelected);
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+
+			}
+			if (cf.getName().equals("child2")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 0);
+				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}
+	}
+	//FEATURE CONTRIBUTION:1M2O
+	@Test
+	public void testCase12(){
+		Feature root = setupTest();
+		Map<Feature, COREFeatureSelectionStatus> fr;
+		Iterator<Feature> it;
+		
+		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY, 0);
+		assertEquals("child1", child1.getName());
+		Feature child2 = createFeature(root,"child2",LinkType.OPTIONAL, 0);
+		assertEquals("child2", child2.getName());
+		Feature child3 = createFeature(root,"child3",LinkType.OPTIONAL, 0);
+		assertEquals("child3", child3.getName());
+		
+		GrlFactory factory = GrlFactoryImpl.init();
+		HashMap<Feature,Evaluation> eval = new HashMap<Feature,Evaluation>();
+		strategy = factory.createEvaluationStrategy();
+		Evaluation notSelected = factory.createEvaluation();
+		Evaluation selected = factory.createEvaluation();
+		notSelected.setEvaluation(0);
+		selected.setEvaluation(100);
+		strategy.setGrlspec(urn.getGrlspec());
+		
+		//tc1 ALL selected
+		eval.put(child1, selected);
+		eval.put(child2, selected);
+		eval.put(child3, selected);
+
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+			}
+			if (cf.getName().equals("child2")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 0);
+			}
+			if (cf.getName().equals("child3")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 0);
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
+	}
+	//FEATURE CONTRIBUTION:2M0O
+	@Test
+	public void testCase13(){
+		Feature root = setupTest();
+		Map<Feature, COREFeatureSelectionStatus> fr;
+		Iterator<Feature> it;
+		
+		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY, 0);
+		assertEquals("child1", child1.getName());
+		Feature child2 = createFeature(root,"child2",LinkType.MANDATORY, 0);
+		assertEquals("child2", child2.getName());
+
+		GrlFactory factory = GrlFactoryImpl.init();
+		HashMap<Feature,Evaluation> eval = new HashMap<Feature,Evaluation>();
+		strategy = factory.createEvaluationStrategy();
+		Evaluation notSelected = factory.createEvaluation();
+		Evaluation selected = factory.createEvaluation();
+		notSelected.setEvaluation(0);
+		selected.setEvaluation(100);
+		strategy.setGrlspec(urn.getGrlspec());
+		
+		//tc1 ALL selected
+		eval.put(child1, selected);
+		eval.put(child2, selected);
+
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 50);
+			}
+			if (cf.getName().equals("child2")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 50);
+			}
+		
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
+	}
+	//FEATURE CONTRIBUTION:2M1O
+	@Test
+	public void testCase14(){
+		Feature root = setupTest();
+		Map<Feature, COREFeatureSelectionStatus> fr;
+		Iterator<Feature> it;
+		
+		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY, 0);
+		assertEquals("child1", child1.getName());
+		Feature child2 = createFeature(root,"child2",LinkType.MANDATORY, 0);
+		assertEquals("child2", child2.getName());
+		Feature child3 = createFeature(root,"child3",LinkType.OPTIONAL, 0);
+		assertEquals("child3", child3.getName());
+
+		GrlFactory factory = GrlFactoryImpl.init();
+		HashMap<Feature,Evaluation> eval = new HashMap<Feature,Evaluation>();
+		strategy = factory.createEvaluationStrategy();
+		Evaluation notSelected = factory.createEvaluation();
+		Evaluation selected = factory.createEvaluation();
+		notSelected.setEvaluation(0);
+		selected.setEvaluation(100);
+		strategy.setGrlspec(urn.getGrlspec());
+		
+		//tc1 ALL selected
+		eval.put(child1, selected);
+		eval.put(child2, selected);
+		eval.put(child3, selected);
+
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 50);
+			}
+			if (cf.getName().equals("child2")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 50);
+			}
+			if (cf.getName().equals("child3")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 0);
+			}
+		
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
+	}
+	//FEATURE CONTRIBUTION:2M2O
+	@Test
+	public void testCase15(){
+		Feature root = setupTest();
+		Map<Feature, COREFeatureSelectionStatus> fr;
+		Iterator<Feature> it;
+		
+		Feature child1 = createFeature(root,"child1",LinkType.MANDATORY, 0);
+		assertEquals("child1", child1.getName());
+		Feature child2 = createFeature(root,"child2",LinkType.MANDATORY, 0);
+		assertEquals("child2", child2.getName());
+		Feature child3 = createFeature(root,"child3",LinkType.OPTIONAL, 0);
+		assertEquals("child3", child3.getName());
+		Feature child4 = createFeature(root,"child4",LinkType.OPTIONAL, 0);
+		assertEquals("child4", child4.getName());
+		
+		GrlFactory factory = GrlFactoryImpl.init();
+		HashMap<Feature,Evaluation> eval = new HashMap<Feature,Evaluation>();
+		strategy = factory.createEvaluationStrategy();
+		Evaluation notSelected = factory.createEvaluation();
+		Evaluation selected = factory.createEvaluation();
+		notSelected.setEvaluation(0);
+		selected.setEvaluation(100);
+		strategy.setGrlspec(urn.getGrlspec());
+		
+		//tc1 ALL selected
+		eval.put(child1, selected);
+		eval.put(child2, selected);
+		eval.put(child3, selected);
+		eval.put(child4, selected);
+
+
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 50);
+			}
+			if (cf.getName().equals("child2")) {
+				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 50);
+			}
+			if (cf.getName().equals("child3")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 0);
+			}
+			if (cf.getName().equals("child4")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 0);
+			}
+		
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}	
+	}
+	//FEATURE CONTRIBUTION:0M1O
+	@Test
+	public void testCase16(){
+		Feature root = setupTest();
+		Map<Feature, COREFeatureSelectionStatus> fr;
+		Iterator<Feature> it;
+		
+		Feature child1 = createFeature(root,"child1",LinkType.OPTIONAL, 0);
+		assertEquals("child1", child1.getName());
+		
+		GrlFactory factory = GrlFactoryImpl.init();
+		HashMap<Feature,Evaluation> eval = new HashMap<Feature,Evaluation>();
+		strategy = factory.createEvaluationStrategy();
+		Evaluation notSelected = factory.createEvaluation();
+		Evaluation selected = factory.createEvaluation();
+		notSelected.setEvaluation(0);
+		selected.setEvaluation(100);
+		strategy.setGrlspec(urn.getGrlspec());
+		
+		//tc1 ALL selected
+		eval.put(child1, selected);
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}
+	}
+	//FEATURE CONTRIBUTION:0M2O
+	@Test
+	public void testCase17(){
+		Feature root = setupTest();
+		Map<Feature, COREFeatureSelectionStatus> fr;
+		Iterator<Feature> it;
+		
+		Feature child1 = createFeature(root,"child1",LinkType.OPTIONAL, 0);
+		assertEquals("child1", child1.getName());
+		Feature child2 = createFeature(root,"child2",LinkType.OPTIONAL, 0);
+		assertEquals("child2", child2.getName());
+
+		
+		GrlFactory factory = GrlFactoryImpl.init();
+		HashMap<Feature,Evaluation> eval = new HashMap<Feature,Evaluation>();
+		strategy = factory.createEvaluationStrategy();
+		Evaluation notSelected = factory.createEvaluation();
+		Evaluation selected = factory.createEvaluation();
+		notSelected.setEvaluation(0);
+		selected.setEvaluation(100);
+		strategy.setGrlspec(urn.getGrlspec());
+		
+		//tc1 ALL selected
+		eval.put(child1, selected);
+		eval.put(child2, selected);
+
+		eval.put(root, notSelected);
+		
+		fr = runAlgo(eval);
+		it = fr.keySet().iterator();
+		while (it.hasNext()) {
+			Feature cf = it.next();
+			COREFeatureSelectionStatus ss = fr.get(cf);
+			//Check each feature and if they're selected or not.
+			if (cf.getName().equals("child1")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+			}
+			if (cf.getName().equals("child2")) {
+				int value=((OptionalFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
+				assertTrue(value == 100);
+			}
+			if (cf.getName().equals("root")) {
+				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+			}
+		}
 	}
 	
 	
