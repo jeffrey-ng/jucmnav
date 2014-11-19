@@ -2011,6 +2011,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			}
 		}
 		//46
+ 
 		eval.put(child1, selected);
 		eval.put(child2, notSelected);
 		eval.put(root, notSelected);
@@ -2094,7 +2095,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			COREFeatureSelectionStatus ss = fr.get(cf);
 			//Check each feature and if they're selected or not.
 			if (cf.getName().equals("child1")) {
-				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
 
 			}
 			if (cf.getName().equals("child2")) {
@@ -2106,7 +2107,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase{
 			if (cf.getName().equals("child3")) {
 				int value=((MandatoryFMLink)(cf.getLinksSrc().get(0))).getQuantitativeContribution();
 				assertTrue(value == 50);
-				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
+				assertTrue(COREFeatureSelectionStatus.NOT_SELECTED_ACTION_REQUIRED == ss);
 
 			}
 		}
