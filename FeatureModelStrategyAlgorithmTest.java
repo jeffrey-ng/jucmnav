@@ -2154,7 +2154,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase {
 	
 
 	@Test
-	public void testCase44_47() {
+	public void testCase444547() {
 		Feature root = setupTest();
 		Map<Feature, COREFeatureSelectionStatus> fr;
 		Iterator<Feature> it;
@@ -2220,30 +2220,6 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase {
 				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 
 			}
-		}
-//		// 46
-//		eval = new HashMap<Feature, Evaluation>();
-//		eval.put(root, selected);
-//		eval.put(child1, selected);
-//		eval.put(child2, notSelected);
-//		fr = runAlgo(eval);
-//		it = fr.keySet().iterator();
-//		while (it.hasNext()) {
-//			Feature cf = it.next();
-//			COREFeatureSelectionStatus ss = fr.get(cf);
-//			// Check each feature and if they're selected or not.
-//			if (cf.getName().equals("child1")) {
-//				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
-//
-//			}
-//			if (cf.getName().equals("child2")) {
-//				int value = ((MandatoryFMLink) (cf.getLinksSrc().get(0)))
-//						.getQuantitativeContribution();
-//				assertTrue(value == 100);
-//				assertTrue(COREFeatureSelectionStatus.AUTO_SELECTED == ss);
-//
-//			}
-//		}
 		// 47
 		eval.put(root, notSelected);
 		eval.put(child1, notSelected);
