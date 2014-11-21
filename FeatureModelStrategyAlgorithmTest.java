@@ -2220,6 +2220,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase {
 				assertTrue(COREFeatureSelectionStatus.USER_SELECTED == ss);
 
 			}
+		}
 		// 47
 		eval.put(root, notSelected);
 		eval.put(child1, notSelected);
@@ -2243,6 +2244,7 @@ public class FeatureModelStrategyAlgorithmTest extends TestCase {
 
 			}
 		}
+		
 
 	}
 	
